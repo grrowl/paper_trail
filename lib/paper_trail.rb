@@ -90,7 +90,8 @@ module PaperTrail
 
   def self.transaction_id=(id)
     paper_trail_store[:transaction_id]=id
-
+  end
+  
   # Getter and Setter for PaperTrail Serializer
   def self.serializer=(value)
     PaperTrail.config.serializer = value

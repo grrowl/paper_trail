@@ -200,22 +200,9 @@ module PaperTrail
 
       def record_create
         if switched_on?
-<<<<<<< HEAD
           version=send(self.class.versions_association_name).create merge_metadata(:event => 'create', :whodunnit => PaperTrail.whodunnit, :transaction_id => PaperTrail.transaction_id)
           set_transaction_id(version)
           save_associations(version)
-=======
-          data = {
-            :event     => 'create',
-            :whodunnit => PaperTrail.whodunnit
-          }
-
-          if changed_notably? and version_class.column_names.include?('object_changes')
-            data[:object_changes] = PaperTrail.serializer.dump(changes_for_paper_trail)
-          end
-
-          send(self.class.versions_association_name).create merge_metadata(data)
->>>>>>> upstream/master
         end
       end
 
