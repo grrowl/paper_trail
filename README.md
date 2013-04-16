@@ -4,6 +4,7 @@ PaperTrail lets you track changes to your models' data.  It's good for auditing 
 
 There's an excellent [Railscast on implementing Undo with Paper Trail](http://railscasts.com/episodes/255-undo-with-paper-trail).
 
+* This code is based on a merge of [cambridgemike's Transaction patch](https://github.com/airblade/paper_trail/pull/90), ignored by the original developer, and the [modern paper_trail extension](https://github.com/airblade/paper_trail/commit/deac77d570287e063b3919ffba4b78aaf745bdf2)
 
 ## Features
 
