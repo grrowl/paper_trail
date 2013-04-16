@@ -30,6 +30,7 @@ class SetUpTestTables < ActiveRecord::Migration
       t.string :action
       t.string  :question
       t.integer :article_id
+      t.string :title
 
       # Controller info columns.
       t.string :ip
@@ -86,6 +87,7 @@ class SetUpTestTables < ActiveRecord::Migration
       t.string :title
       t.string :content
       t.string :abstract
+      t.string :file_upload
     end
 
     create_table :books, :force => true do |t|
@@ -99,6 +101,7 @@ class SetUpTestTables < ActiveRecord::Migration
 
     create_table :people, :force => true do |t|
       t.string :name
+      t.string :time_zone
     end
 
     create_table :songs, :force => true do |t|
@@ -123,7 +126,13 @@ class SetUpTestTables < ActiveRecord::Migration
       t.string    :name
       t.integer   :version
     end
-  
+
+    create_table :translations, :force => true do |t|
+      t.string    :headline
+      t.string    :content
+      t.string    :language_code
+      t.string    :type
+    end
   end
 
   def self.down
@@ -143,5 +152,6 @@ class SetUpTestTables < ActiveRecord::Migration
     drop_table :widgets
     drop_table :documents
     drop_table :legacy_widgets
+    drop_table :translations
   end
 end

@@ -1,11 +1,11 @@
-require 'singleton'
-require 'yaml'
-
 require 'paper_trail/config'
 require 'paper_trail/controller'
 require 'paper_trail/has_paper_trail'
 require 'paper_trail/version'
 require 'paper_trail/version_association'
+
+require 'paper_trail/serializers/yaml'
+require 'paper_trail/serializers/json'
 
 # PaperTrail's module methods can be called in both models and controllers.
 module PaperTrail
@@ -31,6 +31,16 @@ module PaperTrail
   # Sets whether PaperTrail is enabled or disabled for the current request.
   def self.enabled_for_controller=(value)
     paper_trail_store[:request_enabled_for_controller] = value
+  end
+
+  # Set the field which records when a version was created.
+  def self.timestamp_field=(field_name)
+    PaperTrail.config.timestamp_field = field_name
+  end
+
+  # Returns the field which records when a version was created.
+  def self.timestamp_field
+    PaperTrail.config.timestamp_field
   end
 
   # Returns who is reponsible for any changes that occur.
@@ -80,6 +90,14 @@ module PaperTrail
 
   def self.transaction_id=(id)
     paper_trail_store[:transaction_id]=id
+
+  # Getter and Setter for PaperTrail Serializer
+  def self.serializer=(value)
+    PaperTrail.config.serializer = value
+  end
+
+  def self.serializer
+    PaperTrail.config.serializer
   end
 
   private
@@ -95,6 +113,10 @@ module PaperTrail
   # Returns PaperTrail's configuration object.
   def self.config
     @@config ||= PaperTrail::Config.instance
+  end
+
+  def self.configure
+    yield config
   end
 
 end

@@ -3,22 +3,41 @@ class Version < ActiveRecord::Base
   has_many :version_associations, :dependent => :destroy
   
   validates_presence_of :event
+  attr_accessible :item_type, :item_id, :event, :whodunnit, :object, :object_changes
 
   def self.with_item_keys(item_type, item_id)
-    scoped(:conditions => { :item_type => item_type, :item_id => item_id })
+    where :item_type => item_type, :item_id => item_id
+  end
+
+  def self.creates
+    where :event => 'create'
+  end
+
+  def self.updates
+    where :event => 'update'
+  end
+
+  def self.destroys
+    where :event => 'destroy'
   end
 
   scope :subsequent, lambda { |version|
-    where(["#{self.primary_key} > ?", version.is_a?(self) ? version.id : version]).order("#{self.primary_key} ASC")
+    where("#{self.primary_key} > ?", version).order("#{self.primary_key} ASC")
   }
 
   scope :preceding, lambda { |version|
-    where(["#{self.primary_key} < ?", version.is_a?(self) ? version.id : version]).order("#{self.primary_key} DESC")
+    where("#{self.primary_key} < ?", version).order("#{self.primary_key} DESC")
   }
 
-  scope :after, lambda { |timestamp|
+  scope :following, lambda { |timestamp|
     # TODO: is this :order necessary, considering its presence on the has_many :versions association?
-    where(['created_at > ?', timestamp]).order("created_at ASC, #{self.primary_key} ASC")
+    where("#{PaperTrail.timestamp_field} > ?", timestamp).
+      order("#{PaperTrail.timestamp_field} ASC, #{self.primary_key} ASC")
+  }
+
+  scope :between, lambda { |start_time, end_time|
+    where("#{PaperTrail.timestamp_field} > ? AND #{PaperTrail.timestamp_field} < ?", start_time, end_time).
+      order("#{PaperTrail.timestamp_field} ASC, #{self.primary_key} ASC")
   }
 
   scope :transact, lambda { |id|
@@ -42,7 +61,7 @@ class Version < ActiveRecord::Base
       :has_many => false)
 
       unless object.nil?
-        attrs = YAML::load object
+        attrs = PaperTrail.serializer.load object
 
         # Normally a polymorphic belongs_to relationship allows us
         # to get the object we belong to by calling, in this case,
@@ -66,15 +85,16 @@ class Version < ActiveRecord::Base
           model = klass.new
         end
 
+        model.class.unserialize_attributes_for_paper_trail attrs
         attrs.each do |k, v|
-          begin
-            model.send :write_attribute, k.to_sym , v
-          rescue NoMethodError
+          if model.respond_to?("#{k}=")
+            model[k.to_sym] = v
+          else
             logger.warn "Attribute #{k} does not exist on #{item_type} (Version id: #{id})."
           end
         end
 
-        model.send "#{model.class.version_name}=", self
+        model.send "#{model.class.version_association_name}=", self
 
         unless options[:has_one] == false
           reify_has_ones(model,options)
@@ -92,13 +112,13 @@ class Version < ActiveRecord::Base
   # Returns what changed in this version of the item.  Cf. `ActiveModel::Dirty#changes`.
   # Returns nil if your `versions` table does not have an `object_changes` text column.
   def changeset
-    if self.class.column_names.include? 'object_changes'
-      if changes = object_changes
-        HashWithIndifferentAccess[YAML::load(changes)]
-      else
-        {}
-      end
+    return nil unless self.class.column_names.include? 'object_changes'
+
+    HashWithIndifferentAccess.new(PaperTrail.serializer.load(object_changes)).tap do |changes|
+      item_type.constantize.unserialize_attribute_changes(changes)
     end
+  rescue
+    {}
   end
 
   def transact
@@ -137,7 +157,8 @@ class Version < ActiveRecord::Base
   end
 
   def index
-    sibling_versions.select(:id).order("id ASC").map(&:id).index(self.id)
+    id_column = self.class.primary_key.to_sym
+    sibling_versions.select(id_column).order("#{id_column} ASC").map(&id_column).index(self.send(id_column))
   end
 
   private

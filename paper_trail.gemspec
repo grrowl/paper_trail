@@ -15,10 +15,16 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ['lib']
 
-  s.add_dependency 'rails', '~> 3'
+  s.add_dependency 'railties', '~> 3.0'
+  s.add_dependency 'activerecord', '~> 3.0'
 
-  s.add_development_dependency 'shoulda',      '2.10.3'
-  s.add_development_dependency 'sqlite3-ruby', '~> 1.2'
-  s.add_development_dependency 'capybara',     '>= 0.4.0'
-  s.add_development_dependency 'turn'
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'shoulda', '~> 3.3'
+  s.add_development_dependency 'ffaker',  '>= 1.15'
+  # JRuby support for the test ENV
+  unless defined?(JRUBY_VERSION)
+    s.add_development_dependency 'sqlite3', '~> 1.2'
+  else
+    s.add_development_dependency 'activerecord-jdbcsqlite3-adapter', '~> 1.2.9'
+  end
 end
