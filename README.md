@@ -2,9 +2,15 @@
 
 PaperTrail lets you track changes to your models' data.  It's good for auditing or versioning.  You can see how a model looked at any stage in its lifecycle, revert it to any version, and even undelete it after it's been destroyed.
 
-There's an excellent [Railscast on implementing Undo with Paper Trail](http://railscasts.com/episodes/255-undo-with-paper-trail).
+* This code is based on a merge of [cambridgemike's Transaction patch](https://github.com/airblade/paper_trail/pull/90) (ignored by the original developer), [tderks Transaction patch](https://github.com/tderks/paper_trail/commit/122f7bb83b915bb278dc38d50ac40b58f79bcdab) (`Version#reify_has_manys` function) and the [modern paper_trail extension](https://github.com/airblade/paper_trail/commit/deac77d570287e063b3919ffba4b78aaf745bdf2), made compatable with Rails 3.1+
+* It enables proper rollback of Versions based on Transactions, which tie together cascading changes (say, destroying a Folder destroys neseted Folders and Items). It is not designed to fully restore non-transactional relational changes.
+* **`reify_has_ones`** is not fully tested, I'm only using has_many assocations in my target application.
 
-* This code is based on a merge of [cambridgemike's Transaction patch](https://github.com/airblade/paper_trail/pull/90), ignored by the original developer, and the [modern paper_trail extension](https://github.com/airblade/paper_trail/commit/deac77d570287e063b3919ffba4b78aaf745bdf2)
+If anyone would like to contribute I highly recommend working with the intention of merging this back upstream. This would be an excellent feature to be in the stock paper_trail gem, and I think Transactions hit the perfect balance.
+
+Everything below is from the offical, current (as of this writing) paper_trail docs.
+
+--------
 
 ## Features
 

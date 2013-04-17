@@ -208,35 +208,17 @@ class Version < ActiveRecord::Base
   def reify_has_manys(model,options = {})
     model.class.reflect_on_all_associations(:has_many).each do |assoc|
       next if(assoc.name==:versions)
-      version_id_subquery=VersionAssociation.joins(:version).
-        select("MIN(version_id)").
-        where(["item_type = ?",assoc.class_name]).
-        where(["foreign_key_name = ?",assoc.foreign_key]).
+      version_associations=VersionAssociation.includes(:version).
+        where(["item_type = ?", assoc.class_name]).
+        where(["foreign_key_name = ?", assoc.foreign_key]).
         where(["foreign_key_id = ?", model.id]).
-        where(["created_at >= ? OR transaction_id = ?", options[:version_at], transaction_id]).
-        group("item_id").to_sql
-      versions=Version.where("id IN (#{version_id_subquery})")
+        where(['created_at >= ? OR transaction_id = ?', options[:version_at], transaction_id]).
+        group("versions.item_id").order('created_at ASC, versions.id ASC')
       
-      # Pass true to force the model to load
-      collection = Array.new model.send(assoc.name, true)
-      
-      versions.each do |version|
-        if(version.event=='create')
-          if(child=version.item)
-            collection.delete child
-          end
-        else
-          child = version.reify(options)
-   
-          collection.map! do |c|
-            c.id == child.id ? child : c
-          end
-
-        end
+      version_associations.each do |version_association|
+        child=version_association.version.reify(options)
+        model.send(assoc.name) << child
       end
-      
-      model.send(assoc.name).target = collection
-      
     end
   end
 end
